@@ -3,32 +3,22 @@
 """
 Created on Sun May 10 10:40:06 2020
 
-@author: gabin
+This aim of this script is to calculate pitch control and off ball scoring opportunities for all liverpool goals sequences.
+The approach I used to desgin pitch control and off ball scoring opportunities models is detailed in this notebook : https://github.com/Gabsrol/liverpool_analytics_challenge/blob/master/pitch_control_and_off_ball_scoring_model.ipynb
+The function aren't the same as I've adapted them in order to parallelise the calculations and save time.
+
+@author: gabin rolland
 """
-
-#!/usr/bin/env python
-# coding: utf-8
-
-# # Pitch control
-# The aim of this notebook is to reimplement pitch control and understands different steps.
-# * [github link](https://github.com/Friends-of-Tracking-Data-FoTD/LaurieOnTracking/blob/master/Tutorial3_PitchControl.py)
-# * [video](https://www.youtube.com/watch?v=5X1cSehLg6s&t=522s) 
-# * [article](/Users/gabin/Ordinateur/Documents/Informatique/ressources/football/off_the_ball_scoring_opportunities.pdf)
-
-# ## Requirements
-# 
-# **kernel** : liverpool_analytics_kernel from 
-# **conda environment** : liverpool_analytics_challenge_env
 
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import fsolve
+from scipy.stats import multivariate_normal
 import multiprocessing as mp
-
-#from metrica_football_func import Metrica_IO as mio
-#from metrica_football_func import Metrica_PitchControl as mpc
-#from metrica_football_func import Metrica_Viz as mviz
-#from metrica_football_func import Metrica_Velocities as mvel
+import time
+from tqdm import tqdm
+import pandas as pd
+import pickle
 
 import Metrica_IO as mio
 import Metrica_PitchControl as mpc
@@ -167,8 +157,6 @@ def attacking_team_frame(events,frame):
     return(attacking_team)
 
 
-##### Find offside players
-
 def where_home_team_attacks(home_team,away_team,events):
     '''
     Determines where teams attack on the first period using team x average position at game start
@@ -189,6 +177,8 @@ def where_home_team_attacks(home_team,away_team,events):
     else:
         return(1)
     
+##### Find offside players
+
 def find_offside_players(attacking_players, defending_players, where_attack, ball_pos):
     '''
     Determines which attacking players are in offside position. 
@@ -284,7 +274,6 @@ def calculate_pitch_control_at_target(target_position, attacking_players, defend
         # solve pitch control model by integrating equation 3 in Spearman et al.
         # first remove any player that is far (in time) from the target location
         # remove offside players
-        
         attacking_players = [p for p in attacking_players if (p.playername not in offside_players) and (p.time_to_reach_location-tau_min_att < params['time_to_control_att']) ]
         defending_players = [p for p in defending_players if p.time_to_reach_location-tau_min_def < params['time_to_control_def'] ]
 
@@ -349,13 +338,16 @@ def generate_pitch_control_for_frame(frame):
     Parameters
     -----------
         frame: instant at which the pitch control surface should be calculated
+
+    Global variables
+    -----------
         tracking_home: tracking DataFrame for the Home team
         tracking_away: tracking DataFrame for the Away team
         events: Dataframe containing the event data
         params: Dictionary of model parameters (default model parameters can be generated using default_model_params() )
         field_dimen: tuple containing the length and width of the pitch in meters. Default is (106,68)
         n_grid_cells_x: Number of pixels in the grid (in the x-direction) that covers the surface. Default is 50.
-                        n_grid_cells_y will be calculated based on n_grid_cells_x and the field dimensions
+        n_grid_cells_y will be calculated based on n_grid_cells_x and the field dimensions
         
     Returrns
     -----------
@@ -440,10 +432,18 @@ def generate_pitch_control_for_frame(frame):
 # ## Relevant Pitch
 # ### Transition probability
 
-from scipy.stats import multivariate_normal
-
 def calculate_transition_probability_at_target(target_position, ball_start_pos, PPCF, params):
     '''
+    calculate_transition_probability_at_target
+
+    determines the likelihood that the next on-ball moment will occur at target position
+
+    Parameters
+    ----------
+        target_position : position where we want to calculate the probability that the next on-ball moment will occur
+        ball_start_pos : Current position of the ball
+        PPCF : pitch control value at target position
+        params : Dictionary of model parameters
     '''
     
     sigma_2 = params['sigma_normal']**2
@@ -657,12 +657,10 @@ def generate_off_ball_scoring_opportunity_for_frame(frame):
     
     return(PPCFa,xG*PPCFa*T,players_pitch_control)
 
-import time
-from tqdm import tqdm
-import pandas as pd
-import pickle
 
-LR_data = pd.read_csv('../data_inputs/liverpool_analytics_2019.csv')
+############################# script ################################
+
+LR_data = pd.read_csv('/data_inputs/liverpool_analytics_2019.csv')
 params=parameters()
 field_dimen = (106.,68.)
 n_grid_cells_x = 50
@@ -670,13 +668,15 @@ return_players=True
 
 for play in LR_data.play.unique():
     
-    tracking_home = pd.read_csv('../data_inputs/liverpool_analytics/'+play.replace(' ','_')+'/tracking_home.csv')
-    tracking_away = pd.read_csv('../data_inputs/liverpool_analytics/'+play.replace(' ','_')+'/tracking_away.csv')
-    events = pd.read_csv('../data_inputs/liverpool_analytics/'+play.replace(' ','_')+'/events.csv')
+    tracking_home = pd.read_csv('data_inputs/liverpool_analytics/'+play.replace(' ','_')+'/tracking_home.csv')
+    tracking_away = pd.read_csv('ata_inputs/liverpool_analytics/'+play.replace(' ','_')+'/tracking_away.csv')
+    events = pd.read_csv('data_inputs/liverpool_analytics/'+play.replace(' ','_')+'/events.csv')
     
+    # calculate players velocities
     tracking_home = mvel.calc_player_velocities(tracking_home,smoothing=True,filter_='moving_average')
     tracking_away = mvel.calc_player_velocities(tracking_away,smoothing=True,filter_='moving_average')
     
+    # expected goals for two different cases : attakcing on the right (xG1) and attacking on the left (xG0)
     xG0, xgrid, ygrid = generate_expected_goals_surface_for_frame(tracking_home, tracking_away, events, -1, field_dimen=field_dimen, n_grid_cells_x = n_grid_cells_x)
     xG1, xgrid, ygrid = generate_expected_goals_surface_for_frame(tracking_home, tracking_away, events, 1, field_dimen=field_dimen, n_grid_cells_x = n_grid_cells_x)
 
@@ -688,7 +688,7 @@ for play in LR_data.play.unique():
     pool.close()
     pool.join() 
     
-    pickle.dump(result, open('../data_inputs/liverpool_analytics/'+play.replace(' ','_')+'/off_ball_scoring', 'wb'))
+    pickle.dump(result, open('data_inputs/liverpool_analytics/'+play.replace(' ','_')+'/off_ball_scoring', 'wb'))
     
     pbar.close()
 

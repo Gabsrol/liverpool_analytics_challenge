@@ -246,7 +246,8 @@ def calculate_pitch_control_at_target(target_position, attacking_players, defend
     else: 
         # solve pitch control model by integrating equation 3 in Spearman et al.
         # first remove any player that is far (in time) from the target location
-        attacking_players = [p for p in attacking_players if p.time_to_reach_location-tau_min_att < params['time_to_control_att'] ]
+        # remove offside players
+        attacking_players = [p for p in attacking_players if (p.playername not in offside_players) and (p.time_to_reach_location-tau_min_att < params['time_to_control_att']) ]
         defending_players = [p for p in defending_players if p.time_to_reach_location-tau_min_def < params['time_to_control_def'] ]
         
         # set up integration arrays
