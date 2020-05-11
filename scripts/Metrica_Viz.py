@@ -12,6 +12,8 @@ import numpy as np
 import matplotlib.animation as animation
 from moviepy import editor as mpy
 from moviepy.video.io.bindings import mplfig_to_npimage
+#import Metrica_PitchControl01 as mpc
+from scripts import Metrica_PitchControl01 as mpc
 
 def swap_axes(line2d,xdata,ydata):
     line2d.set_xdata(ydata)
