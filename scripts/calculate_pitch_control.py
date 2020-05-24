@@ -538,7 +538,7 @@ def generate_transition_probability_for_frame(frame, tracking_home, tracking_awa
         print("Checksum failed: %1.3f" % (1-checksum),frame,play)
     
     #normalize T to unity
-    T=T/np.max(T)
+    T=T/np.sum(T)
     
     if return_players:
         players_pitch_control = {}
@@ -624,7 +624,7 @@ def generate_expected_goals_surface_for_frame(tracking_home, tracking_away, even
             xG[i,j] = calculate_expected_goals_at_target(target_position, where_attack, field_dimen = field_dimen)
             
     # normalize to unity as max xG is around 35%
-    xG=xG/np.max(xG)
+    xG=xG/np.sum(xG)
     return(xG, xgrid, ygrid)
 
 def generate_off_ball_scoring_opportunity_for_frame(frame):
