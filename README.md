@@ -6,7 +6,7 @@ Thanks to @lastrowview for the datasets and to Friends of Tracking for their tut
 
 ## Repository description
 
-* [**liverpool_goals_analysis.ipynb**](https://github.com/Gabsrol/liverpool_analytics_challenge/blob/master/liverpool_goals_analysis.ipynb) notebook presents the code used to generate the figures displayed in the Medium post. ** This is the first notebook to open** to understand the repository and what you have to run to have all the data.
+* [**liverpool_goals_analysis.ipynb**](https://github.com/Gabsrol/liverpool_analytics_challenge/blob/master/liverpool_goals_analysis.ipynb) notebook presents the code used to generate the figures displayed in the Medium post. **This is the first notebook to open** to understand the repository and what you have to run to have all the data.
 * [**make_contribution_animations**](https://github.com/Gabsrol/liverpool_analytics_challenge/blob/master/make_animations.ipynb) notebook presents the code I used to generate the videos displayed in the Medium post.
 * [**pitch_control_and_off_ball_scoring_model.ipynb**](https://github.com/Gabsrol/liverpool_analytics_challenge/blob/master/pitch_control_and_off_ball_scoring_model.ipynb) where I detailed the approach I used to create pitch control model.
 * [all_goals_animation.ipynb](https://github.com/Gabsrol/liverpool_analytics_challenge/blob/master/all_goals_animation.ipynb) where I detail how to realise a video with all goals players moves.
